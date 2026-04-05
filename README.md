@@ -103,6 +103,14 @@ DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
 mkdir -p $DOCKER_CONFIG/cli-plugins
 curl -SL https://github.com/docker/compose/releases/download/v5.0.1/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
 chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+
+```
+Редактирование .env
+```
+DOCKER_IMAGE=dkutuzov/kittygram_dkutuzov:latest
+
+APP_PORT=8081 - - можно заменить на свой порт
+NGINX_PORT=8443 - можно заменить на свой порт
 ```
 Содержимое docker-compose.yml
 ```
@@ -110,9 +118,9 @@ version: '3.8'
 
 services:
   kittygram:
-    image: dkutuzov/kittygram_dkutuzov:latest
+    image: ${DOCKER_IMAGE}
     ports:
-      - "8000:8000"
+      - "${APP_PORT}:8000"
     restart: always
     volumes:
       - kittygram_data:/app
@@ -120,7 +128,7 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "8443:80"
+      - "${NGINX_PORT}:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
@@ -135,10 +143,9 @@ volumes:
 ```
 docker-compose up -d
 ```
-Сервис будет доступен по порту который указан в docker-compose.yml
+Сервис будет доступен по порту который указан в .env
 ```
-    ports:
-      - "8443:80"
+NGINX_PORT=8443
 ```
 Проверка работы
 ```
