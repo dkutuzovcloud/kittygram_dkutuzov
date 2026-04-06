@@ -1,55 +1,38 @@
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.views import APIView
+from rest_framework import permissions
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework import viewsets
-from .models import Cat
-from .serializers import  CatSerializer
+from rest_framework import viewsets, generics
+from django.contrib.auth.models import User
+from .models import Cat, Category
+from .serializers import CatSerializer, CategorySerializer, UserSerializer
+from rest_framework.permissions import BasePermission
 
+
+
+class IsOwnerOrReadOnly(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.owner == request.user
 
 class CatViewSet(viewsets.ModelViewSet):
-    queryset = Cat.objects.all()
+    queryset = Cat.objects.all()  # ← ОБЯЗАТЕЛЬНО!
     serializer_class = CatSerializer
+    permission_classes = [IsOwnerOrReadOnly]
 
-class CatList(generics.ListCreateAPIView):
-    queryset = Cat.objects.all()
-    serializer_class = CatSerializer
+    def get_queryset(self):
+        return Cat.objects.filter(owner=self.request.user)
 
-class CatDetail(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Cat.objects.all()
-    serializer_class = CatSerializer
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()  # ← ОБЯЗАТЕЛЬНО!
+    serializer_class = CategorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-
-class APICat(APIView):
-    def get(self, request):
-        cats = Cat.objects.all()
-        serializer = CatSerializer(cats, many=True)
-        return Response(serializer.data)
-
-    def post(self, request):
-        serializer = CatSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# @api_view(['GET', 'POST'])
-# def cat_list(request):
-#     if request.method == 'POST':
-#         serializer = CatSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#     cats = Cat.objects.all()
-#     serializer = CatSerializer(cats, many=True)
-#     return Response(serializer.data)
-
-@api_view(['GET', 'POST'])
-def hello(request):
-    if request.method == 'POST':
-        return Response({'message': 'Полученные данные','data': request.data})
-
-    return Response({'message': 'Это был GET запрос!'})
+class UserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]

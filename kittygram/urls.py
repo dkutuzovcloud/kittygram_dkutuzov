@@ -1,18 +1,17 @@
+from django.contrib import admin
 from django.urls import path, include
-
-from cats.views import CatList, CatDetail, CatViewSet
-
-from cats.views import APICat
-from rest_framework.routers import SimpleRouter
-
-router = SimpleRouter()
-
-router.register('cats', CatViewSet)
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView
+)  # ← Импорт
 
 urlpatterns = [
-   # path('cats/', CatList.as_view()),
-   #  path('cats/<int:pk>/', CatDetail.as_view()),
-    path('', include(router.urls)),
+    path('admin/', admin.site.urls),
+    path('', include('cats.urls')),
+
+    # ✅ ДОКУМЕНТАЦИЯ API
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
-
-
